@@ -1,0 +1,84 @@
+getwd()
+setwd("/Users/apple/Desktop/SOCI50112/proposal/ICPSR_36873/codes")
+
+install.packages("manymome")
+library(manymome)
+library(tidyverse)
+
+df <- read_csv("data_cleaned.csv")
+df <- df %>% 
+  filter(!is.na(men_h_change_cate)) %>%
+  filter(!is.na(phy_h_change_cate)) %>%
+  filter(!is.na(men_h_cate)) %>%
+  filter(!is.na(phy_h_cate)) %>%
+  filter(!is.na(bond)) %>%
+  filter(!is.na(bridg_po)) %>%
+  filter(!is.na(tang_s_di)) %>%
+  filter(!is.na(tang_s_change_cate)) %>%
+  filter(!is.na(emo_s_di)) %>%
+  filter(!is.na(emo_s_change_cate)) %>%
+  filter(!is.na(gender)) %>%
+  filter(!is.na(degree)) %>%
+  filter(!is.na(work)) %>%
+  filter(!is.na(marriage)) %>%
+  filter(!is.na(race))
+
+
+
+
+
+
+lm_tang_s_di <- lm(tang_s_di ~ bond + bridg_po 
+                   + gender + degree + work + marriage + race, 
+                   df)
+lm_tang_s_change_cate <- lm(tang_s_change_cate ~ bond + bridg_po 
+                   + gender + degree + work + marriage + race, 
+                   df)
+lm_emo_s_di <- lm(emo_s_di ~ bond + bridg_po 
+                   + gender + degree + work + marriage + race, 
+                   df)
+lm_emo_s_change_cate <- lm(emo_s_change_cate ~ bond + bridg_po 
+                            + gender + degree + work + marriage + race, 
+                            df)
+
+lm_phy_h_cate <- lm(phy_h_cate ~ bond + bridg_po 
+                    + tang_s_di + tang_s_change_cate + emo_s_di + emo_s_change_cate
+                    + gender + degree + work + marriage + race, 
+                    df)
+lm_phy_h_change_cate <- lm(phy_h_change_cate ~ bond + bridg_po 
+                    + tang_s_di + tang_s_change_cate + emo_s_di + emo_s_change_cate
+                    + gender + degree + work + marriage + race, 
+                    df)
+lm_men_h_cate <- lm(men_h_cate ~ bond + bridg_po 
+                    + tang_s_di + tang_s_change_cate + emo_s_di + emo_s_change_cate
+                    + gender + degree + work + marriage + race, 
+                    df)
+lm_men_h_change_cate <- lm(men_h_change_cate ~ bond + bridg_po 
+                           + tang_s_di + tang_s_change_cate + emo_s_di + emo_s_change_cate
+                           + gender + degree + work + marriage + race, 
+                           df)
+
+
+
+fit_lm <- lm2list(lm_tang_s_di, lm_tang_s_change_cate, lm_emo_s_di, lm_emo_s_change_cate,
+                  lm_phy_h_cate, lm_phy_h_change_cate, lm_men_h_cate, lm_men_h_change_cate)
+
+boot_out_lm <- do_boot(fit_lm,
+                       R = 100,
+                       seed = 54532,
+                       ncores = 1)
+
+all_paths <- all_indirect_paths(fit = fit_lm,
+                                x = c("bond", "bridg_po"),
+                                y = c("phy_h_cate", "phy_h_change_cate", "men_h_cate", "men_h_change_cate"),
+                                exclude = c("gender", "degree", "work", "marriage", "race"))
+
+all_paths
+
+out_all <- many_indirect_effects(paths = all_paths,
+                                 fit = fit_lm,
+                                 boot_ci = TRUE,
+                                 boot_out = boot_out_lm)
+
+out_all
+
